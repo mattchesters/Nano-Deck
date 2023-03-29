@@ -50,18 +50,10 @@ def run(app):
     keyboard.send(Keycode.ENTER)
     time.sleep(0.1)
 
-# AutoRunner for Valheim
-runThenWalk = False
-def runThenWalk():
-    while runThenWalk == True: 
-        keyboard.press(Keycode.LEFT_SHIFT, Keycode.W)
-        time.sleep(10)
-        keyboard.release(Keycode.LEFT_SHIFT, Keycode.W)
-        time.sleep(0.1)
-        keyboard.press(Keycode.W)
-        time.sleep(10)
-        keyboard.release(Keycode.W)
-        time.sleep(0.1)
+# Game AutoRunner variables
+auto_run_activated = False
+move_pace = None
+pace_timer = None
 
 while True:
     # Check configured digial pins
@@ -95,35 +87,57 @@ while True:
               run("firefox.exe")
 
             if i == 4 :
-              print("Valheim Run then Walk loop")
-              if runThenWalk == True :
-                print("Stop running")
-                runThenWalk = False
-              if runThenWalk == False :
-                print("Start running")
-                runThenWalk = True
+              if auto_run_activated == True :
+                print("Stop auto run")
+                keyboard.release_all
+                auto_run_activated = False
+              elif auto_run_activated == False :
+                print("Start auto run")
+                auto_run_activated = True
 
-        # Encoder tracker
-        position = encoder.position
-        if last_position is None or position != last_position:
-            if encoder_persona == "volume" :
-                if position > last_position :
-                    print("Volume up")
-                    consumer_control.press(ConsumerControlCode.VOLUME_INCREMENT)
-                    time.sleep(0.1)
-                    consumer_control.release()
-                if position < last_position :
-                    print("Volume down")
-                    consumer_control.press(ConsumerControlCode.VOLUME_DECREMENT)
-                    time.sleep(0.1)
-                    consumer_control.release()
-            elif encoder_persona == "scroll" :
-                if position > last_position :
-                    print("Scroll up")
-                    mouse.move(wheel=-1)
-                if position < last_position :
-                    print("Scroll down")
-                    mouse.move(wheel=1)
-        last_position = position
+    # Game AutoRunner
+    if auto_run_activated == True :
+      if move_pace is None :
+          print("Start running")
+          keyboard.press(Keycode.LEFT_SHIFT, Keycode.W)
+          move_pace = "Fast"
+          pace_timer = time.monotonic()
+      if move_pace == "Fast" :
+        if time.monotonic() - pace_timer > 8.0:
+          print("Walking for 4 secs")
+          keyboard.release(Keycode.LEFT_SHIFT, Keycode.W)
+          keyboard.press(Keycode.W)
+          move_pace = "Slow"
+          pace_timer = time.monotonic()
+      if move_pace == "Slow" :
+        if time.monotonic() - pace_timer > 4.0:
+          print("Running for 8 secs")
+          keyboard.release(Keycode.W)
+          keyboard.press(Keycode.LEFT_SHIFT, Keycode.W)
+          move_pace = "Fast"
+          pace_timer = time.monotonic()
+
+    # Encoder tracker
+    position = encoder.position
+    if last_position is None or position != last_position:
+        if encoder_persona == "volume" :
+            if position > last_position :
+                print("Volume up")
+                consumer_control.press(ConsumerControlCode.VOLUME_INCREMENT)
+                time.sleep(0.1)
+                consumer_control.release()
+            if position < last_position :
+                print("Volume down")
+                consumer_control.press(ConsumerControlCode.VOLUME_DECREMENT)
+                time.sleep(0.1)
+                consumer_control.release()
+        elif encoder_persona == "scroll" :
+            if position > last_position :
+                print("Scroll up")
+                mouse.move(wheel=-1)
+            if position < last_position :
+                print("Scroll down")
+                mouse.move(wheel=1)
+    last_position = position
 
     time.sleep(0.01)
